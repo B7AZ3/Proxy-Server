@@ -1,4 +1,4 @@
-# Dynamic Web Server
+# Dynamic Web Proxy
 
 Install Dependencies:
 ```sh
