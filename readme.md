@@ -1,6 +1,8 @@
+# Dynamic Web Server
+
 Install Dependencies:
 ```sh
-npm install express http-proxy-middleware
+npm install express http-proxy-middleware cors morgan
 ```
 
 Run server:

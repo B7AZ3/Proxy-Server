@@ -1,20 +1,48 @@
+const fs = require("fs");
+const path = require("path");
+const cors = require("cors");
+const morgan = require("morgan");
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const allowedOrigins = ["http://localhost:8080"];
+const options = {origin: allowedOrigins, credentials: true};
+const accessLogStream = fs.createWriteStream(path.join(__dirname, "access.log"), {flags: "a"});
 
-// Add logging middleware to see every incoming request
+morgan.token('all-req-headers', (req) => {
+  return JSON.stringify(req.headers);
+});
+
+morgan.token('all-res-headers', (req, res) => {
+  const headers = {};
+  res.getHeaderNames().forEach(name => {
+    headers[name] = res.getHeader(name);
+  });
+  return JSON.stringify(headers);
+});
+
+app.use(morgan(
+  ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"\n' +
+  'Request Headers: :all-req-headers\n' +
+  'Response Headers: :all-res-headers\n' +
+  '----------------------------------------',
+  { stream: accessLogStream }
+));
+
+app.use(cors(options));
+
+
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   console.log('Query parameters:', req.query);
   next();
 });
 
-// Dynamic proxy route
 app.use('/', (req, res, next) => {
-  // Get the target from the query parameter (your preferred style)
-  const target = req.query.url; // Use: curl "http://yourserver.com?url=https://google.com"
+
+  const target = req.query.url;
 
   if (!target) {
     console.error('Missing target URL in query parameters');
@@ -22,7 +50,6 @@ app.use('/', (req, res, next) => {
   }
 
   try {
-    // Validate that the target is a valid URL
     new URL(target);
   } catch (err) {
     console.error('Invalid URL provided:', target);
@@ -31,12 +58,12 @@ app.use('/', (req, res, next) => {
 
   console.log(`Proxying request to: ${target}`);
 
-  // Create the proxy middleware for this specific request
+
     createProxyMiddleware({
       target: target,
       changeOrigin: true,
-      secure: false, // Ignore SSL certificate errors during testing
-      logLevel: 'debug', // This provides built-in debug logs
+      secure: false,
+      logLevel: 'debug',
       onProxyReq: (proxyReq, req, res) => {
         console.log('Proxy request initiated');
       },
