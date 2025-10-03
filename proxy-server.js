@@ -7,7 +7,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = ["http://localhost:8080"];
+const allowedOrigins = ["*"];
 const options = {origin: allowedOrigins, credentials: true};
 const accessLogStream = fs.createWriteStream(path.join(__dirname, "access.log"), {flags: "a"});
 
